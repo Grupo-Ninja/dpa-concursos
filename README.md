@@ -9,7 +9,7 @@
 
 ## 📋 Sobre o Projeto
 
-O **DPA Concursos** é uma plataforma web desenvolvida para [Breve descrição: ex: gestão de alunos, visualização de editais ou landing page informativa]. 
+O **DPA Concursos** é uma plataforma web desenvolvida para Gestão de alunos. 
 
 O grande diferencial técnico deste projeto é sua arquitetura **Zero-Config**. Diferente de backends tradicionais onde é necessário configurar bancos de dados manualmente, este sistema utiliza um **"Genesis Script"** personalizado que detecta o primeiro uso e constrói toda a estrutura de dados automaticamente.
 
