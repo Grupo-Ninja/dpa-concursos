@@ -1,7 +1,12 @@
 // backEnd/seed.js
 import PocketBase from 'pocketbase';
 
-const pb = new PocketBase('http://127.0.0.1:8090');
+// Configuração via variáveis de ambiente
+const POCKETBASE_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090';
+const ADMIN_EMAIL = process.env.POCKETBASE_ADMIN_EMAIL || 'admin@email.com';
+const ADMIN_PASSWORD = process.env.POCKETBASE_ADMIN_PASSWORD || '1234567890';
+
+const pb = new PocketBase(POCKETBASE_URL);
 
 // --- DADOS ---
 const DATA = {
@@ -47,8 +52,8 @@ const ID_MAP = {};
 async function main() {
     try {
         console.log('🔌 Conectando ao PocketBase...');
-        // Use suas credenciais de admin criadas no navegador
-        await pb.admins.authWithPassword('admin@email.com', '1234567890');
+        // Use variáveis de ambiente para credenciais do admin
+        await pb.admins.authWithPassword(ADMIN_EMAIL, ADMIN_PASSWORD);
         console.log('✅ Autenticado!');
 
         console.log('🛠  Verificando/Criando tabelas...');
