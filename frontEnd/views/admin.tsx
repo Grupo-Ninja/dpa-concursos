@@ -1,7 +1,8 @@
-import React, { useState, useMemo, useEffect } from 'react';
+
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { User, Task, Cohort, StudentRank, Subject, AppSettings } from '../types';
 import { Button, Card, Badge, Input, Select, Modal, TextArea, BrandLogo } from '../components/ui';
-import { LayoutDashboard, Users, BookOpen, Settings, Check, X, TrendingUp, AlertTriangle, LogOut, Plus, GraduationCap, AlignLeft, ChevronDown, Edit2, Trash2, Filter, Search, Lock, Unlock, ArrowRightLeft, Copy, User as UserIcon, RefreshCw, Files, Palette, MessageSquare, Phone, Link, Library, List } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, Settings, Check, X, TrendingUp, AlertTriangle, LogOut, Plus, GraduationCap, AlignLeft, ChevronDown, Edit2, Trash2, Filter, Search, Lock, Unlock, ArrowRightLeft, Copy, User as UserIcon, RefreshCw, Files, Palette, MessageSquare, Phone, Link, Library, List, Menu as MenuIcon } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LineChart, Line, CartesianGrid, Legend } from 'recharts';
 import { pb } from './lib/pocketbase'; // <--- Import do Backend
 
@@ -224,14 +225,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ cohorts, subjects }) =>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <Input type="date" label="De" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="text-sm border-slate-200 bg-slate-50/50 focus:bg-white" />
-          <Input type="date" label="Até" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="text-sm border-slate-200 bg-slate-50/50 focus:bg-white" />
+          <Input type="date" label="De" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="text-base md:text-sm border-slate-200 bg-slate-50/50 focus:bg-white" />
+          <Input type="date" label="Até" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="text-base md:text-sm border-slate-200 bg-slate-50/50 focus:bg-white" />
           <Select label="Turma" value={selectedCohort} onChange={(e) => { setSelectedCohort(e.target.value); setSelectedStudent(''); }}
-            options={[{ value: '', label: 'Todas as Turmas' }, ...cohorts.map(c => ({ value: c.id, label: c.name }))]} className="text-sm border-slate-200 bg-slate-50/50 focus:bg-white" />
+            options={[{ value: '', label: 'Todas as Turmas' }, ...cohorts.map(c => ({ value: c.id, label: c.name }))]} className="text-base md:text-sm border-slate-200 bg-slate-50/50 focus:bg-white" />
           <Select label="Disciplina" value={selectedSubject} onChange={(e) => setSelectedSubject(e.target.value)}
-            options={[{ value: '', label: 'Todas as Disciplinas' }, ...subjects.map(s => ({ value: s.name, label: s.name }))]} className="text-sm border-slate-200 bg-slate-50/50 focus:bg-white" />
+            options={[{ value: '', label: 'Todas as Disciplinas' }, ...subjects.map(s => ({ value: s.name, label: s.name }))]} className="text-base md:text-sm border-slate-200 bg-slate-50/50 focus:bg-white" />
           <Select label="Aluno" value={selectedStudent} onChange={(e) => setSelectedStudent(e.target.value)}
-            options={[{ value: '', label: 'Todos os Alunos' }, ...studentOptions]} disabled={studentOptions.length === 0} className="text-sm border-slate-200 bg-slate-50/50 focus:bg-white" />
+            options={[{ value: '', label: 'Todos os Alunos' }, ...studentOptions]} disabled={studentOptions.length === 0} className="text-base md:text-sm border-slate-200 bg-slate-50/50 focus:bg-white" />
         </div>
       </div>
 
@@ -326,7 +327,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ cohorts, subjects }) =>
                     dataKey="value"
                   >
                     {failureData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell key={`cell - ${index} `} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip />
@@ -546,29 +547,88 @@ const SettingsView: React.FC<{ settings: AppSettings, setSettings: React.Dispatc
     } catch (err) { alert('Erro ao salvar.'); } finally { setLoading(false); }
   };
 
+  // Ícone Helper Component
+  const SectionHeader: React.FC<{ icon: React.ElementType, title: string }> = ({ icon: Icon, title }) => (
+    <div className="flex items-center gap-3 mb-6">
+      <div className="bg-amber-50 p-2 rounded-lg text-amber-600"><Icon className="w-5 h-5" /></div>
+      <h4 className="text-lg font-bold text-slate-800">{title}</h4>
+    </div>
+  );
+
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
-      <div><h3 className="text-xl font-bold text-slate-900 font-['Playfair_Display']">Configurações Gerais</h3><p className="text-slate-500 text-sm">Atualize os dados da sua instituição.</p></div>
-      <Card className="space-y-6 p-8">
-        <div className="space-y-4">
-          <h4 className="font-bold text-slate-900 flex items-center gap-2"><Settings className="w-4 h-4" /> Informações Básicas</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input label="Nome da Escola (Logo)" value={settings.schoolName} onChange={(e) => setSettings({ ...settings, schoolName: e.target.value })} placeholder="Ex: Concursos DPA" />
-            <Input label="Nome da Orientadora (Abaixo do Logo)" value={settings.instructorName} onChange={(e) => setSettings({ ...settings, instructorName: e.target.value })} placeholder="Ex: Prof. Elaine Reis" />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input label="Telefone de Contato" value={settings.phone} onChange={(e) => setSettings({ ...settings, phone: e.target.value })} icon={Phone} />
-            <Input label="Email de Suporte" value={settings.email} onChange={(e) => setSettings({ ...settings, email: e.target.value })} type="email" />
+    <div className="max-w-2xl mx-auto space-y-6">
+      <div>
+        <h3 className="text-xl font-bold text-slate-900 font-['Playfair_Display']">Configurações Gerais</h3>
+        <p className="text-slate-500 text-sm">Personalize a identidade e contatos da escola.</p>
+      </div>
+
+      {/* CARD 1: Info Básica */}
+      <Card className="p-6 !rounded-[16px] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border-0">
+        <SectionHeader icon={Settings} title="Informações Básicas" />
+        <div className="grid grid-cols-1 gap-5">
+          <Input
+            label="Nome da Escola (Logo)"
+            value={settings.schoolName}
+            onChange={(e) => setSettings({ ...settings, schoolName: e.target.value })}
+            placeholder="Ex: Concursos DPA"
+            icon={Library}
+          />
+          <Input
+            label="Nome da Orientadora"
+            value={settings.instructorName}
+            onChange={(e) => setSettings({ ...settings, instructorName: e.target.value })}
+            placeholder="Ex: Prof. Elaine Reis"
+            icon={UserIcon}
+          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <Input
+              label="Telefone de Contato"
+              value={settings.phone}
+              onChange={(e) => setSettings({ ...settings, phone: e.target.value })}
+              icon={Phone}
+            />
+            <Input
+              label="Email de Suporte"
+              value={settings.email}
+              onChange={(e) => setSettings({ ...settings, email: e.target.value })}
+              type="email"
+              icon={MessageSquare}
+            />
           </div>
         </div>
-        <div className="space-y-4 pt-6 border-t border-slate-100">
-          <h4 className="font-bold text-slate-900 flex items-center gap-2"><MessageSquare className="w-4 h-4" /> Comunicação</h4>
-          {/* MUDANÇA: Label explícito sobre onde aparece */}
-          <TextArea label="Frase Motivacional (Aparece no topo de 'Meu Dia')" value={settings.welcomeMessage} onChange={(e) => setSettings({ ...settings, welcomeMessage: e.target.value })} placeholder="Ex: Hoje é um ótimo dia para evoluir." />
-          <Input label="Link do Grupo WhatsApp" value={settings.whatsappLink} onChange={(e) => setSettings({ ...settings, whatsappLink: e.target.value })} placeholder="https://chat.whatsapp.com/..." />
-        </div>
-        <div className="pt-4"><Button onClick={handleSave} fullWidth disabled={loading}>{loading ? 'Salvando...' : 'Salvar Configurações'}</Button></div>
       </Card>
+
+      {/* CARD 2: Comunicação */}
+      <Card className="p-6 !rounded-[16px] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border-0">
+        <SectionHeader icon={MessageSquare} title="Comunicação" />
+        <div className="space-y-5">
+          <TextArea
+            label="Frase Motivacional (Topo do App)"
+            value={settings.welcomeMessage}
+            onChange={(e) => setSettings({ ...settings, welcomeMessage: e.target.value })}
+            placeholder="Ex: Hoje é um ótimo dia para evoluir."
+            className="bg-slate-50"
+          />
+          <Input
+            label="Link do Grupo WhatsApp"
+            value={settings.whatsappLink}
+            onChange={(e) => setSettings({ ...settings, whatsappLink: e.target.value })}
+            placeholder="https://chat.whatsapp.com/..."
+            icon={Link}
+          />
+        </div>
+      </Card>
+
+      <div className="pt-2">
+        <Button
+          onClick={handleSave}
+          fullWidth
+          disabled={loading}
+          className="py-4 text-base font-bold shadow-xl shadow-slate-900/10"
+        >
+          {loading ? 'Salvando...' : 'Salvar Todas as Configurações'}
+        </Button>
+      </div>
     </div>
   );
 }
@@ -595,6 +655,33 @@ const PlannerView: React.FC<{ cohorts: Cohort[], subjects: Subject[] }> = ({ coh
   const [newTaskDesc, setNewTaskDesc] = useState('');
 
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  // --- Drag Scroll Logic ---
+  const daysContainerRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!daysContainerRef.current) return;
+    setIsDragging(true);
+    setStartX(e.pageX - daysContainerRef.current.offsetLeft);
+    setScrollLeft(daysContainerRef.current.scrollLeft);
+  };
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+  };
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !daysContainerRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - daysContainerRef.current.offsetLeft;
+    const walk = (x - startX) * 2; // Scroll-fast
+    daysContainerRef.current.scrollLeft = scrollLeft - walk;
+  };
+  // -------------------------
 
   // Sincronia: Seleciona a primeira turma
   useEffect(() => {
@@ -742,7 +829,7 @@ const PlannerView: React.FC<{ cohorts: Cohort[], subjects: Subject[] }> = ({ coh
   const getSubjectColor = (subjName: string) => { const s = subjects.find(sub => sub.name === subjName); return s ? s.color : '#94a3b8'; };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)]">
+    <div className="flex flex-col min-h-[calc(100vh-8rem)] h-auto">
       {/* ... (Topo com seletores de turma e botões Base/Aluno - Mantido igual) ... */}
       <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm mb-4 space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -777,44 +864,61 @@ const PlannerView: React.FC<{ cohorts: Cohort[], subjects: Subject[] }> = ({ coh
         )}
       </div>
 
-      <div className="flex flex-col md:flex-row gap-6 flex-1 overflow-hidden">
-        {/* ... (Menu lateral de Dias da Semana - Mantido) ... */}
-        <div className="w-full md:w-40 flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-y-auto pb-2 md:pb-0 shrink-0 scrollbar-hide">
-          {days.map(day => (<button key={day} onClick={() => setSelectedDay(day)} className={`flex-shrink-0 text-center md:text-left px-4 py-3 rounded-xl text-sm font-medium transition-all ${selectedDay === day ? 'bg-slate-900 text-white shadow-md shadow-slate-300 transform scale-105' : 'bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent hover:border-slate-200'}`}> {day === 'Monday' ? 'Segunda' : day === 'Tuesday' ? 'Terça' : day === 'Wednesday' ? 'Quarta' : day === 'Thursday' ? 'Quinta' : day === 'Friday' ? 'Sexta' : day === 'Saturday' ? 'Sábado' : 'Domingo'} </button>))}
+      <div className="flex flex-col md:flex-row gap-6 h-auto">
+        {/* ... (Menu lateral de Dias da Semana com Drag) ... */}
+        <div
+          ref={daysContainerRef}
+          onMouseDown={handleMouseDown}
+          onMouseLeave={handleMouseLeave}
+          onMouseUp={handleMouseUp}
+          onMouseMove={handleMouseMove}
+          className="w-full md:w-40 flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-y-auto pb-2 md:pb-0 shrink-0 scrollbar-hide snap-x snap-mandatory cursor-grab active:cursor-grabbing select-none"
+        >
+          {days.map(day => (
+            <button
+              key={day}
+              onClick={() => setSelectedDay(day)}
+              className={`flex-shrink-0 text-center md:text-left px-4 py-3 rounded-xl text-sm font-medium transition-all snap-start scroll-ml-2 ${selectedDay === day ? 'bg-slate-900 text-white shadow-md shadow-slate-300 transform scale-105 sticky left-0 z-10' : 'bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent hover:border-slate-200'}`}
+            >
+              {day === 'Monday' ? 'Segunda' : day === 'Tuesday' ? 'Terça' : day === 'Wednesday' ? 'Quarta' : day === 'Thursday' ? 'Quinta' : day === 'Friday' ? 'Sexta' : day === 'Saturday' ? 'Sábado' : 'Domingo'}
+            </button>
+          ))}
         </div>
 
-        <div className="flex-1 bg-white border border-slate-100 rounded-2xl p-6 shadow-sm overflow-y-auto relative">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sticky top-0 bg-white/95 backdrop-blur-sm z-10 py-2 border-b border-slate-50 gap-4">
-            <div><h2 className="text-xl font-bold text-slate-900 font-['Playfair_Display']">{planMode === 'base' ? 'Cronograma Geral' : `Cronograma de ${cohortStudents.find(s => s.id === selectedStudentId)?.name || 'Aluno'}`}</h2><p className="text-xs text-slate-500">{planMode === 'base' ? 'Todas as edições aqui afetam novos alunos.' : 'Edições aqui são exclusivas deste aluno.'}</p></div>
+        <div className="flex-1 bg-white border border-slate-100 rounded-2xl p-6 shadow-sm overflow-visible flex flex-col relative h-auto">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 py-2 border-b border-slate-50 gap-4 shrink-0">
+            <div><h2 className="text-xl font-bold text-slate-900 font-['Playfair_Display']">{planMode === 'base' ? 'Cronograma Geral' : `Cronograma de ${cohortStudents.find(s => s.id === selectedStudentId)?.name || 'Aluno'} `}</h2><p className="text-xs text-slate-500">{planMode === 'base' ? 'Todas as edições aqui afetam novos alunos.' : 'Edições aqui são exclusivas deste aluno.'}</p></div>
             <div className="flex gap-2 w-full sm:w-auto">
               {planMode === 'student' && selectedStudentId && (<Button onClick={() => selectedStudentId && studentHasTasks ? setImportConflictModalOpen(true) : executeImport('merge')} icon={Copy} variant="outline" className="border-amber-200 text-amber-700 hover:bg-amber-50 flex-1 sm:flex-none">Importar Base</Button>)}
               <Button icon={Plus} onClick={handleOpenCreate} disabled={planMode === 'student' && !selectedStudentId} className={`flex-1 sm:flex-none ${planMode === 'student' && !selectedStudentId ? 'opacity-50 cursor-not-allowed' : ''}`}>Adicionar Aula</Button>
             </div>
           </div>
-          <div className="space-y-3">
-            {filteredTasks.map(task => (
-              <div key={task.id} className="flex flex-col p-4 border border-slate-100 rounded-xl hover:border-amber-200 transition-all group bg-white hover:shadow-sm">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-4">
-                    <div className="w-1.5 h-12 rounded-full mt-1" style={{ backgroundColor: getSubjectColor(task.subject) }}></div>
-                    <div>
-                      <h4 className="font-bold text-slate-900 text-lg leading-tight">{task.subject}</h4>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge color="gray">{task.mode}</Badge>
-                        <span className="text-xs text-slate-400 font-medium">• {task.durationMinutes} min</span>
-                        {/* Lógica do Badge: Só mostra 'Personalizado' se NÃO for cópia da base */}
-                        {task.studentId ? (
-                          isTrulyPersonalized(task) ? (<Badge color="amber">Personalizado</Badge>) : (<Badge color="blue">Turma</Badge>)
-                        ) : null}
+          <div className="h-auto -mx-6 px-6 relative">
+            <div className="space-y-3 pb-6">
+              {filteredTasks.map(task => (
+                <div key={task.id} className="flex flex-col p-4 border border-slate-100 rounded-xl hover:border-amber-200 transition-all group bg-white hover:shadow-sm">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-4">
+                      <div className="w-1.5 h-12 rounded-full mt-1" style={{ backgroundColor: getSubjectColor(task.subject) }}></div>
+                      <div>
+                        <h4 className="font-bold text-slate-900 text-lg leading-tight">{task.subject}</h4>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge color="gray">{task.mode}</Badge>
+                          <span className="text-xs text-slate-400 font-medium">• {task.durationMinutes} min</span>
+                          {/* Lógica do Badge: Só mostra 'Personalizado' se NÃO for cópia da base */}
+                          {task.studentId ? (
+                            isTrulyPersonalized(task) ? (<Badge color="amber">Personalizado</Badge>) : (<Badge color="blue">Turma</Badge>)
+                          ) : null}
+                        </div>
                       </div>
                     </div>
+                    <div className="flex gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"><button onClick={() => handleOpenEdit(task)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Edit2 className="w-4 h-4" /></button><button onClick={() => handleDeleteTask(task.id)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button></div>
                   </div>
-                  <div className="flex gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"><button onClick={() => handleOpenEdit(task)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Edit2 className="w-4 h-4" /></button><button onClick={() => handleDeleteTask(task.id)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button></div>
+                  {task.description && (<div className="mt-4 pt-3 border-t border-slate-50 flex items-start gap-3"><AlignLeft className="w-4 h-4 text-slate-300 mt-0.5 shrink-0" /><p className="text-sm text-slate-600 leading-relaxed">{task.description}</p></div>)}
                 </div>
-                {task.description && (<div className="mt-4 pt-3 border-t border-slate-50 flex items-start gap-3"><AlignLeft className="w-4 h-4 text-slate-300 mt-0.5 shrink-0" /><p className="text-sm text-slate-600 leading-relaxed">{task.description}</p></div>)}
-              </div>
-            ))}
-            {filteredTasks.length === 0 && (<div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-slate-100 rounded-xl bg-slate-50/50"><div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-3"><BookOpen className="w-6 h-6 text-slate-300" /></div><p className="text-slate-500 font-medium">Nenhuma aula planejada para este dia.</p></div>)}
+              ))}
+              {filteredTasks.length === 0 && (<div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-slate-100 rounded-xl bg-slate-50/50"><div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-3"><BookOpen className="w-6 h-6 text-slate-300" /></div><p className="text-slate-500 font-medium">Nenhuma aula planejada para este dia.</p></div>)}
+            </div>
           </div>
         </div>
       </div>
@@ -899,24 +1003,54 @@ const StudentManagementView: React.FC<{ cohorts: Cohort[] }> = ({ cohorts }) => 
 
   const getCohortName = (id: string) => cohorts.find(c => c.id === id)?.name || 'Sem Turma';
 
+  // --- Drag Scroll Logic (Reutilizado) ---
+  const tableRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!tableRef.current) return;
+    setIsDragging(true);
+    setStartX(e.pageX - tableRef.current.offsetLeft);
+    setScrollLeft(tableRef.current.scrollLeft);
+  };
+  const handleMouseLeave = () => { setIsDragging(false); };
+  const handleMouseUp = () => { setIsDragging(false); };
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !tableRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - tableRef.current.offsetLeft;
+    const walk = (x - startX) * 2;
+    tableRef.current.scrollLeft = scrollLeft - walk;
+  };
+  // ----------------------------------------
+
   return (
     <Card>
       <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
         <h2 className="text-xl font-bold text-slate-900 font-['Playfair_Display']">Gestão de Alunos</h2>
         <div className="relative w-full sm:w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input type="text" placeholder="Buscar aluno..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-200 transition-all" />
+          <input type="text" placeholder="Buscar aluno..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-amber-200 transition-all" />
         </div>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left">
+      <div
+        ref={tableRef}
+        onMouseDown={handleMouseDown}
+        onMouseLeave={handleMouseLeave}
+        onMouseUp={handleMouseUp}
+        onMouseMove={handleMouseMove}
+        className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing select-none"
+      >
+        <table className="w-full text-left min-w-[800px]">
           <thead><tr className="border-b border-slate-100 text-slate-500 text-sm"><th className="pb-3 px-4">Aluno</th><th className="pb-3 px-4">Turma</th><th className="pb-3 px-4">Eficiência</th><th className="pb-3 px-4">Horas</th><th className="pb-3 px-4 text-center">Falhas</th><th className="pb-3 px-4 text-center">Status</th><th className="pb-3 px-4 text-right">Ações</th></tr></thead>
           <tbody className="divide-y divide-slate-50">
             {filteredStudents.map((student) => (
               <tr key={student.id} className="text-sm hover:bg-slate-50 group transition-colors">
                 <td className="py-4 px-4 font-medium text-slate-900"><div className="flex items-center gap-3"><div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center font-bold text-slate-500 text-xs">{student.name.charAt(0)}</div>{student.name}</div></td>
                 <td className="py-4 px-4 text-slate-600"><Badge color="gray">{getCohortName(student.cohortId)}</Badge></td>
-                <td className="py-4 px-4"><div className="flex items-center gap-2"><div className="w-12 h-1.5 bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-amber-500 rounded-full" style={{ width: `${student.efficiency}%` }}></div></div><span className="text-xs font-medium">{student.efficiency}%</span></div></td>
+                <td className="py-4 px-4"><div className="flex items-center gap-2"><div className="w-12 h-1.5 bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-amber-500 rounded-full" style={{ width: `${student.efficiency}% ` }}></div></div><span className="text-xs font-medium">{student.efficiency}%</span></div></td>
                 <td className="py-4 px-4 text-slate-600">{student.totalHours}h</td>
                 <td className="py-4 px-4 text-center"><span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold ${student.failures > 3 ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-600'}`}>{student.failures}</span></td>
                 <td className="py-4 px-4 text-center"><div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${student.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}>{student.status === 'active' ? 'Ativo' : 'Bloqueado'}</div></td>
@@ -1006,61 +1140,91 @@ const RegistersView: React.FC = () => {
         <p className="text-slate-500 text-sm">Gerencie as opções e cores dos formulários.</p>
       </div>
 
-      <div className="flex gap-2 border-b border-slate-200">
-        <button onClick={() => setActiveTab('modes')} className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === 'modes' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>Modos de Estudo</button>
-        <button onClick={() => setActiveTab('failures')} className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === 'failures' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>Motivos de Falha</button>
+      <div className="bg-slate-100 p-1 rounded-xl flex mb-6">
+        <button
+          onClick={() => setActiveTab('modes')}
+          className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all shadow-sm ${activeTab === 'modes' ? 'bg-white text-slate-800' : 'text-slate-500 hover:text-slate-600 bg-transparent shadow-none'}`}
+        >
+          Modos de Estudo
+        </button>
+        <button
+          onClick={() => setActiveTab('failures')}
+          className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all shadow-sm ${activeTab === 'failures' ? 'bg-white text-slate-800' : 'text-slate-500 hover:text-slate-600 bg-transparent shadow-none'}`}
+        >
+          Motivos de Falha
+        </button>
       </div>
 
       <Card className="p-6">
-        <div className="flex flex-col md:flex-row gap-4 mb-6 items-end">
-          <Input label={activeTab === 'modes' ? "Nome (Ex: Vídeo)" : "Motivo (Ex: Sem Luz)"} value={newItemLabel} onChange={(e) => setNewItemLabel(e.target.value)} containerClassName="flex-1" />
+        <div className="flex flex-col gap-4 mb-8">
+          <Input
+            label={activeTab === 'modes' ? "Nome" : "Motivo"}
+            value={newItemLabel}
+            onChange={(e) => setNewItemLabel(e.target.value)}
+            placeholder={activeTab === 'modes' ? "Ex: Vídeo Aula" : "Ex: Sem Energia"}
+            containerClassName="w-full"
+          />
 
-          {/* Campo Código (Só aparece em Modos) */}
           {activeTab === 'modes' && (
-            <Input label="Código (Opcional)" value={newItemValue} onChange={(e) => setNewItemValue(e.target.value)} containerClassName="w-32" placeholder="video" />
+            <Input
+              label="Código (Opcional)"
+              value={newItemValue}
+              onChange={(e) => setNewItemValue(e.target.value)}
+              containerClassName="w-full"
+              placeholder="Ex: video"
+            />
           )}
 
-          {/* SELETOR DE COR (AGORA APARECE SEMPRE) */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Cor</label>
-            <div className="flex items-center gap-2 h-[42px] px-3 border border-slate-200 rounded-xl bg-slate-50 hover:bg-white hover:border-amber-300 transition-colors cursor-pointer relative overflow-hidden">
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-slate-700">Cor da Etiqueta</label>
+            <div className="relative flex items-center gap-3 p-3 border border-slate-200 rounded-lg bg-white hover:border-amber-300 transition-colors cursor-pointer group">
               <input
                 type="color"
                 value={newItemColor}
                 onChange={(e) => setNewItemColor(e.target.value)}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                title="Escolher cor"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
               />
-              <div className="w-6 h-6 rounded-full border border-slate-200 shadow-sm" style={{ backgroundColor: newItemColor }}></div>
-              <span className="text-xs text-slate-500 font-mono w-16">{newItemColor}</span>
+              <div className="w-8 h-8 rounded-full shadow-sm border border-slate-100" style={{ backgroundColor: newItemColor }}></div>
+              <span className="text-sm font-mono text-slate-600 uppercase flex-1">{newItemColor}</span>
+              <Palette className="w-5 h-5 text-slate-400 group-hover:text-amber-500" />
             </div>
           </div>
 
-          <Button onClick={handleAdd} icon={Plus}>Adicionar</Button>
+          <Button onClick={handleAdd} icon={Plus} fullWidth className="mt-2 py-3 shadow-lg shadow-amber-500/20">
+            Adicionar Item
+          </Button>
         </div>
 
-        <div className="space-y-2">
-          {loading ? <p className="text-slate-400 text-sm">Carregando...</p> : items.map(item => (
-            <div key={item.id} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl group hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-100 transition-all">
-              <div className="flex items-center gap-3">
-                {/* Bolinha da cor */}
-                <div
-                  className="w-4 h-4 rounded-full border border-white shadow-sm"
-                  style={{ backgroundColor: item.color || '#94a3b8' }}
-                ></div>
-
-                <span className="font-medium text-slate-700">{item.label}</span>
-
-                {item.value && (
-                  <Badge color="gray" size="sm" className="opacity-50">
-                    {item.value}
-                  </Badge>
-                )}
+        <div className="space-y-3">
+          {loading ? (
+            <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div></div>
+          ) : (
+            items.map(item => (
+              <div key={item.id} className="flex justify-between items-center p-4 bg-white border border-slate-100 rounded-xl shadow-sm">
+                <div className="flex items-center gap-4">
+                  <div
+                    className="w-4 h-4 rounded-full shadow-sm ring-2 ring-slate-50"
+                    style={{ backgroundColor: item.color || '#94a3b8' }}
+                  ></div>
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-slate-800 text-base">{item.label}</span>
+                    {item.value && <span className="text-xs text-slate-400 font-mono">{item.value}</span>}
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleDelete(item.id)}
+                  className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
               </div>
-              <button onClick={() => handleDelete(item.id)} className="text-slate-400 hover:text-rose-600 opacity-0 group-hover:opacity-100 transition-all"><Trash2 className="w-4 h-4" /></button>
+            ))
+          )}
+          {items.length === 0 && !loading && (
+            <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+              <p className="text-slate-400 text-sm">Nenhum item cadastrado.</p>
             </div>
-          ))}
-          {items.length === 0 && !loading && <p className="text-center text-slate-400 text-sm py-4">Nenhum item cadastrado.</p>}
+          )}
         </div>
       </Card>
     </div>
@@ -1071,6 +1235,7 @@ const RegistersView: React.FC = () => {
 export const AdminApp: React.FC<AdminViewProps> = ({ user, onLogout, subjects, setSubjects, settings, setSettings }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'cohorts' | 'planner' | 'students' | 'subjects' | 'settings' | 'registers'>('dashboard');
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // Novo State para Menu Mobile
 
   useEffect(() => {
     async function fetchCohorts() {
@@ -1083,7 +1248,77 @@ export const AdminApp: React.FC<AdminViewProps> = ({ user, onLogout, subjects, s
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row relative overflow-hidden">
+      {/* 1. Mobile Header (Fixo no topo) */}
+      <header className="lg:hidden bg-white border-b border-slate-100 min-h-[60px] py-2 px-4 flex justify-between items-center sticky top-0 z-40 shadow-sm relative">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsMobileMenuOpen(true)}
+            id="mobile-menu-trigger"
+            className="p-2 -ml-2 text-slate-600 hover:bg-slate-50 rounded-lg relative z-10"
+          >
+            <MenuIcon className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Logo Centralizado Absolutamente */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+          <div className="pointer-events-auto max-h-[40px] flex items-center">
+            <BrandLogo size="small" layout="horizontal" />
+          </div>
+        </div>
+
+        <div className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center text-amber-500 font-bold border border-amber-500 text-xs relative z-10">{user.name.charAt(0)}</div>
+      </header>
+
+      {/* 2. Mobile Sidebar Overlay (Backdrop) */}
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 lg:hidden transition-opacity"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* 3. Mobile Sidebar Container (Off-Canvas) */}
+      <aside
+        className={`fixed inset-y-0 left-0 w-80 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out z-50 lg:hidden flex flex-col p-6 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      >
+        <div className="flex justify-between items-center mb-6">
+          <BrandLogo size="small" />
+          <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 -mr-2 text-slate-400 hover:text-slate-600 transition-colors">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+        <nav className="flex-1 flex flex-col space-y-2 overflow-y-auto scrollbar-hide">
+          {[
+            { id: 'dashboard', icon: LayoutDashboard, label: 'Visão Geral' },
+            { id: 'cohorts', icon: GraduationCap, label: 'Turmas' },
+            { id: 'planner', icon: BookOpen, label: 'Planejamento' },
+            { id: 'students', icon: Users, label: 'Alunos & Rankings' },
+            { id: 'registers', icon: List, label: 'Cadastros' },
+            { id: 'subjects', icon: Library, label: 'Disciplinas' },
+            { id: 'settings', icon: Settings, label: 'Configurações' },
+          ].map(item => (
+            <button
+              key={item.id}
+              onClick={() => { setActiveTab(item.id as any); setIsMobileMenuOpen(false); }}
+              className={`w-full flex items-center gap-4 px-4 py-3 text-base font-medium rounded-xl transition-all ${activeTab === item.id
+                ? 'bg-amber-50 text-amber-600'
+                : 'text-slate-600 hover:bg-slate-50 hover:text-amber-600'
+                }`}
+            >
+              <item.icon className="w-6 h-6" /> {item.label}
+            </button>
+          ))}
+        </nav>
+        <div className="mt-auto pt-6 border-t border-slate-100">
+          <button onClick={onLogout} className="w-full flex items-center gap-4 px-4 py-3 text-base font-medium text-rose-600 rounded-xl hover:bg-rose-50 transition-colors">
+            <LogOut className="w-6 h-6" /> Sair
+          </button>
+        </div>
+      </aside>
+
+      {/* Desktop Sidebar (Mantido Igual, apenas hidden em mobile) */}
       <aside className="w-64 bg-white border-r border-slate-100 fixed inset-y-0 left-0 flex flex-col hidden lg:flex">
         <div className="p-6 border-b border-slate-50 flex justify-center"><BrandLogo size="small" /></div>
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -1100,8 +1335,9 @@ export const AdminApp: React.FC<AdminViewProps> = ({ user, onLogout, subjects, s
         </nav>
         <div className="p-4 border-t border-slate-50"><button onClick={onLogout} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-rose-600 rounded-xl hover:bg-rose-50 transition-colors"><LogOut className="w-5 h-5" /> Sair</button></div>
       </aside>
-      <main className="flex-1 lg:ml-64 p-8">
-        <header className="mb-8 flex justify-between items-center">
+
+      <main className="flex-1 lg:ml-64 p-4 lg:p-8 overflow-x-hidden">
+        <header className="mb-8 hidden lg:flex justify-between items-center">
           <h2 className="text-2xl font-bold text-slate-900 font-['Playfair_Display']">
             {activeTab === 'dashboard' && 'Dashboard'}
             {activeTab === 'cohorts' && 'Gerenciamento de Turmas'}

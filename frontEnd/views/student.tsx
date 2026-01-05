@@ -74,7 +74,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, status, onClick, onViewDetail
 
                 <button
                     onClick={(e) => { e.stopPropagation(); onViewDetails(); }}
-                    className="p-2 text-slate-300 hover:text-amber-500 hover:bg-amber-50 rounded-full transition-colors"
+                    className="p-3 -m-1 text-slate-300 hover:text-amber-500 hover:bg-amber-50 rounded-full transition-colors" // Touch target increased
                     title="Ver Detalhes"
                 >
                     <Eye className="w-5 h-5" />
@@ -132,7 +132,7 @@ const TaskDetailModal: React.FC<{ task: Task | null; isOpen: boolean; onClose: (
                 </div>
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
                     <h4 className="font-bold text-slate-700 mb-2 flex items-center gap-2"><BookOpen className="w-4 h-4" /> Observações / Instruções</h4>
-                    <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap">{task.description || "Nenhuma observação adicional para esta aula."}</p>
+                    <p className="text-slate-600 text-sm md:text-base leading-relaxed whitespace-pre-wrap">{task.description || "Nenhuma observação adicional para esta aula."}</p>
                 </div>
                 <Button fullWidth onClick={onClose} variant="outline">Fechar</Button>
             </div>
@@ -199,9 +199,9 @@ const HistoryView: React.FC<{ user: User, subjects: Subject[] }> = ({ user, subj
                 <p className="text-slate-500">Seus registros de estudo e ocorrências.</p>
             </header>
 
-            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex gap-4 items-center">
-                <Input type="date" label="Data" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="text-sm bg-slate-50" />
-                <Select label="Matéria" value={filterSubject} onChange={(e) => setFilterSubject(e.target.value)} options={[{ value: '', label: 'Todas' }, ...subjects.map(s => ({ value: s.name, label: s.name }))]} className="text-sm bg-slate-50" />
+            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row gap-4">
+                <Input type="date" label="Data" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="bg-slate-50" />
+                <Select label="Matéria" value={filterSubject} onChange={(e) => setFilterSubject(e.target.value)} options={[{ value: '', label: 'Todas' }, ...subjects.map(s => ({ value: s.name, label: s.name }))]} className="bg-slate-50" />
             </div>
 
             <div className="space-y-4">
@@ -217,12 +217,12 @@ const HistoryView: React.FC<{ user: User, subjects: Subject[] }> = ({ user, subj
                                 <span className="text-xs font-medium text-slate-400 bg-slate-50 px-2 py-1 rounded-md">{formatDate(checkin.timestamp)}</span>
                             </div>
                             {checkin.completed ? (
-                                <div className="text-sm text-slate-600">
+                                <div className="text-sm md:text-base text-slate-600">
                                     <span className="font-medium text-emerald-600 flex items-center gap-1 mb-1"><Sparkles className="w-3 h-3" /> Meta Cumprida</span>
                                     <p>Tempo: {checkin.actualDurationMinutes} min {checkin.note ? `• "${checkin.note}"` : ''}</p>
                                 </div>
                             ) : (
-                                <div className="text-sm text-slate-600">
+                                <div className="text-sm md:text-base text-slate-600">
                                     <span className="font-medium text-rose-500 flex items-center gap-1 mb-1"><AlertCircle className="w-3 h-3" /> Não Realizado</span>
                                     <p>Motivo: {checkin.reasonForFailure}</p>
                                 </div>
@@ -325,7 +325,10 @@ const AnalyticsView: React.FC<{ user: User }> = ({ user }) => {
 
     return (
         <div className="space-y-8 pb-24 md:pb-8">
-            <header><h1 className="text-3xl font-bold text-slate-900 font-['Playfair_Display']">Sua Evolução</h1><p className="text-slate-500">A constância é a chave da aprovação.</p></header>
+            <header>
+                <h1 className="text-3xl font-bold text-slate-900 font-['Playfair_Display']">Sua Evolução</h1>
+                <p className="text-slate-500">A constância é a chave da aprovação.</p>
+            </header>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card className="p-6 flex flex-col items-center justify-center text-center border-l-4 border-l-emerald-500">
                     <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-3"><Target className="w-6 h-6" /></div>
@@ -358,6 +361,8 @@ const AnalyticsView: React.FC<{ user: User }> = ({ user }) => {
     );
 };
 
+// Na importação (linha 1) adicione useRef se faltar
+
 const StudentDashboard: React.FC<{
     allTasks: Task[];
     taskStatusMap: Record<string, CheckIn>;
@@ -366,9 +371,34 @@ const StudentDashboard: React.FC<{
     user: User;
     subjects: Subject[];
     settings: AppSettings;
-    modes: any[]; // Recebe modos do pai
+    modes: any[];
 }> = ({ allTasks, taskStatusMap, onTaskClick, onViewDetails, user, subjects, settings, modes }) => {
     const [selectedDayKey, setSelectedDayKey] = useState('Monday');
+
+    // --- Drag Scroll Logic ---
+    const navRef = React.useRef<HTMLDivElement>(null); // Usando React.useRef direto para garantir
+    const [isDragging, setIsDragging] = useState(false);
+    const [startX, setStartX] = useState(0);
+    const [scrollLeft, setScrollLeft] = useState(0);
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if (!navRef.current) return;
+        setIsDragging(true);
+        setStartX(e.pageX - navRef.current.offsetLeft);
+        setScrollLeft(navRef.current.scrollLeft);
+    };
+    const handleMouseLeave = () => { setIsDragging(false); };
+    const handleMouseUp = () => { setIsDragging(false); };
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!isDragging || !navRef.current) return;
+        e.preventDefault();
+        const x = e.pageX - navRef.current.offsetLeft;
+        const walk = (x - startX) * 2;
+        navRef.current.scrollLeft = scrollLeft - walk;
+    };
+
+    // Auto-scroll para dia selecionado se quiser depois
+    // -------------------------
 
     const dailyTasks = useMemo(() => allTasks.filter(t => t.dayOfWeek === selectedDayKey), [allTasks, selectedDayKey]);
 
@@ -398,7 +428,7 @@ const StudentDashboard: React.FC<{
                     <div>
                         <div className="flex items-center gap-2 text-amber-500 font-bold text-xs uppercase tracking-wider mb-2"><span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> Visão Geral</div>
                         <h1 className="text-3xl md:text-4xl font-bold font-['Playfair_Display'] text-slate-900 mb-2">Olá, {user.name.split(' ')[0]}</h1>
-                        <p className="text-slate-500 text-lg">{settings.welcomeMessage || "Hoje é um ótimo dia para evoluir."}</p>
+                        <p className="text-slate-500 text-lg md:text-xl">{settings.welcomeMessage || "Hoje é um ótimo dia para evoluir."}</p>
                     </div>
                     <div className="w-full md:w-64">
                         <div className="flex justify-between items-end mb-2"><span className="text-sm font-medium text-slate-600">Progresso de {selectedDayLabel}</span><span className="text-2xl font-bold text-slate-900">{progress}%</span></div>
@@ -409,11 +439,18 @@ const StudentDashboard: React.FC<{
                 <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-amber-100/50 rounded-full blur-3xl pointer-events-none mix-blend-multiply"></div>
             </div>
 
-            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+            <div
+                ref={navRef}
+                onMouseDown={handleMouseDown}
+                onMouseLeave={handleMouseLeave}
+                onMouseUp={handleMouseUp}
+                onMouseMove={handleMouseMove}
+                className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 cursor-grab active:cursor-grabbing select-none"
+            >
                 {DAYS_NAV.map((day, idx) => {
                     const isSelected = selectedDayKey === day.key;
                     return (
-                        <button key={day.key} onClick={() => setSelectedDayKey(day.key)} className={`flex flex-col items-center justify-center min-w-[60px] h-[70px] rounded-2xl border transition-all duration-200 ${isSelected ? 'bg-slate-900 border-slate-900 text-white shadow-md transform scale-105' : 'bg-white border-slate-100 text-slate-400 hover:border-amber-200 hover:text-amber-500'}`}>
+                        <button key={day.key} onClick={() => setSelectedDayKey(day.key)} className={`flex-shrink-0 flex flex-col items-center justify-center min-w-[60px] h-[70px] rounded-2xl border transition-all duration-200 snap-start ${isSelected ? 'bg-slate-900 border-slate-900 text-white shadow-md transform scale-105' : 'bg-white border-slate-100 text-slate-400 hover:border-amber-200 hover:text-amber-500'}`}>
                             <span className="text-xs font-medium uppercase tracking-wide">{day.label}</span>
                             <span className={`text-lg font-bold ${isSelected ? 'text-amber-400' : 'text-slate-600'}`}>{20 + idx}</span>
                         </button>
@@ -600,7 +637,7 @@ export const StudentApp: React.FC<StudentViewProps> = ({ user, onLogout, subject
             <main className="flex-1 md:ml-64 p-4 md:p-8 max-w-[1600px] mx-auto w-full">
                 <header className="md:hidden flex justify-between items-center mb-6">
                     <BrandLogo size="small" />
-                    <div className="flex items-center gap-3"><button onClick={onLogout} className="text-slate-400 hover:text-rose-600"><LogOut className="w-5 h-5" /></button><div className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center text-amber-500 font-bold text-sm">{user.name.charAt(0)}</div></div>
+                    <div className="flex items-center gap-3"><button onClick={onLogout} className="text-slate-400 hover:text-rose-600"><LogOut className="w-6 h-6" /></button><div className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center text-amber-500 font-bold text-sm">{user.name.charAt(0)}</div></div>
                 </header>
 
                 {/* PASSA OS MODOS PARA O DASHBOARD */}
@@ -610,12 +647,12 @@ export const StudentApp: React.FC<StudentViewProps> = ({ user, onLogout, subject
                 {activeTab === 'about' && <CompanyInfoView settings={settings} />}
             </main>
 
-            {/* Mobile Nav */}
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-6 py-3 pb-6 flex justify-between items-center z-40 shadow-sm">
-                <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center gap-1 ${activeTab === 'home' ? 'text-amber-500' : 'text-slate-400'}`}><LayoutDashboard className="w-6 h-6" /><span className="text-[10px] font-bold">Hoje</span></button>
-                <button onClick={() => setActiveTab('analytics')} className={`flex flex-col items-center gap-1 ${activeTab === 'analytics' ? 'text-amber-500' : 'text-slate-400'}`}><Trophy className="w-6 h-6" /><span className="text-[10px] font-bold">Evolução</span></button>
-                <button onClick={() => setActiveTab('history')} className={`flex flex-col items-center gap-1 ${activeTab === 'history' ? 'text-amber-500' : 'text-slate-400'}`}><History className="w-6 h-6" /><span className="text-[10px] font-bold">Histórico</span></button>
-                <button onClick={() => setActiveTab('about')} className={`flex flex-col items-center gap-1 ${activeTab === 'about' ? 'text-amber-500' : 'text-slate-400'}`}><Info className="w-6 h-6" /><span className="text-[10px] font-bold">Sobre</span></button>
+            {/* Mobile Nav - Increased touch targets */}
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-6 py-2 pb-safe flex justify-between items-center z-40 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center justify-center gap-1 w-16 h-16 ${activeTab === 'home' ? 'text-amber-500' : 'text-slate-400'}`}><LayoutDashboard className="w-7 h-7" /><span className="text-[10px] font-bold">Hoje</span></button>
+                <button onClick={() => setActiveTab('analytics')} className={`flex flex-col items-center justify-center gap-1 w-16 h-16 ${activeTab === 'analytics' ? 'text-amber-500' : 'text-slate-400'}`}><Trophy className="w-7 h-7" /><span className="text-[10px] font-bold">Evolução</span></button>
+                <button onClick={() => setActiveTab('history')} className={`flex flex-col items-center justify-center gap-1 w-16 h-16 ${activeTab === 'history' ? 'text-amber-500' : 'text-slate-400'}`}><History className="w-7 h-7" /><span className="text-[10px] font-bold">Histórico</span></button>
+                <button onClick={() => setActiveTab('about')} className={`flex flex-col items-center justify-center gap-1 w-16 h-16 ${activeTab === 'about' ? 'text-amber-500' : 'text-slate-400'}`}><Info className="w-7 h-7" /><span className="text-[10px] font-bold">Sobre</span></button>
             </nav>
 
             <TaskDetailModal task={viewingTask} isOpen={!!viewingTask} onClose={() => setViewingTask(null)} />
