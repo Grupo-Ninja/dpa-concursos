@@ -3,26 +3,32 @@ version: '3.8'
 services:
   backend:
     build: ./backEnd
-    container_name: antigravity-backend
+    container_name: dpa-concursos-backend
     ports:
-      - "8090:8090" # Porta Host : Porta Container
+      - "${POCKETBASE_PORT:-8090}:8090" # Porta Host : Porta Container
     volumes:
       - pb_data:/app/pb_data # Persiste o banco de dados mesmo se desligar o container
       # Se quiser editar o seed.js e ver mudança sem rebuildar, descomente abaixo:
       # - ./backEnd/seed.js:/app/seed.js 
+    environment:
+      - POCKETBASE_ADMIN_EMAIL=${POCKETBASE_ADMIN_EMAIL:-admin@email.com}
+      - POCKETBASE_ADMIN_PASSWORD=${POCKETBASE_ADMIN_PASSWORD:-1234567890}
+      - POCKETBASE_CORS_ORIGIN=${POCKETBASE_CORS_ORIGIN:-*}
     networks:
       - app-network
 
   frontend:
-    build: ./frontEnd
-    container_name: antigravity-frontend
+    build:
+      context: ./frontEnd
+      args:
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:8090}
+        - VITE_ALLOWED_HOSTS=${VITE_ALLOWED_HOSTS:-localhost}
+    container_name: dpa-concursos-frontend
     ports:
-      - "3000:3000"
-    volumes:
-      - ./frontEnd:/app
-      - /app/node_modules
+      - "${VITE_PORT:-3000}:3000"
     environment:
-      - VITE_API_URL=http://localhost:8090
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:8090}
+      - VITE_ALLOWED_HOSTS=${VITE_ALLOWED_HOSTS:-localhost}
     depends_on:
       - backend
     networks:

@@ -9,6 +9,7 @@ RUN unzip /tmp/pb.zip -d /app/ && rm /tmp/pb.zip
 
 COPY package*.json ./
 COPY seed.js ./
+COPY pb_migrations ./pb_migrations/
 
 RUN npm install
 
